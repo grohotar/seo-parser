@@ -143,6 +143,7 @@ COUNTRIES = {
     },
     "Объединенные Арабские Эмираты": {
         "name_en": "UAE",
+        "name_ru_short": "оаэ",
         "adjective_ru": "эмиратский",
         "adjective_en": "emirati"
     },
@@ -236,6 +237,10 @@ def generate_query_variations(country_name, country_data):
     variations.append(f"{country_name} впн")
     variations.append(f"{adjective_ru} впн")
     variations.append(f"впн для {country_name}")
+    
+    # Дополнительный запрос для ОАЭ
+    if "name_ru_short" in country_data:
+        variations.append(f"{country_data['name_ru_short']} впн")
     
     # Английские запросы
     variations.append(f"vpn {name_en}")
