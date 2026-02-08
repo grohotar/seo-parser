@@ -29,8 +29,37 @@ COUNTRIES = {
     },
     "Великобритания": {
         "name_en": "United Kingdom",
+        "name_ru_alt": "Британия",
         "adjective_ru": "британский",
         "adjective_en": "british"
+    },
+    "Азербайджан": {
+        "name_en": "Azerbaijan",
+        "name_ru_alt": "Азербайжан",
+        "adjective_ru": "азербайджанский",
+        "adjective_ru_alt": "азербайджанская",
+        "adjective_en": "azerbaijani"
+    },
+    "Беларусь": {
+        "name_en": "Belarus",
+        "name_ru_alt": "Беларусь",
+        "adjective_ru": "белорусский",
+        "adjective_ru_alt": "белорусская",
+        "adjective_en": "belarusian"
+    },
+    "Киргизия": {
+        "name_en": "Kyrgyzstan",
+        "name_ru_alt": "Киргизия",
+        "adjective_ru": "киргизский",
+        "adjective_ru_alt": "киргизская",
+        "adjective_en": "kyrgyz"
+    },
+    "Таджикистан": {
+        "name_en": "Tajikistan",
+        "name_ru_alt": "Таджикистан",
+        "adjective_ru": "таджикский",
+        "adjective_ru_alt": "таджикская",
+        "adjective_en": "tajik"
     },
     "Грузия": {
         "name_en": "Georgia",
