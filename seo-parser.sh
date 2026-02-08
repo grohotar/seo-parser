@@ -652,9 +652,22 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
-# Создаём виртуальное окружение
-echo -e "${YELLOW}🔧 Создание виртуального окружения...${NC}"
-python3 -m venv venv
+# Проверяем и устанавливаем python3-venv если нужно
+echo -e "${YELLOW}🔧 Проверка python3-venv...${NC}"
+if ! python3 -m venv venv 2>/dev/null; then
+    echo -e "${YELLOW}📦 Установка python3-venv...${NC}"
+    if [ -x "$(command -v apt)" ]; then
+        apt update && apt install -y python3.12-venv python3-dev
+    elif [ -x "$(command -v yum)" ]; then
+        yum install -y python3.12-venv python3-devel
+    else
+        echo -e "${RED}❌ Не удалось установить python3-venv${NC}"
+        exit 1
+    fi
+    echo -e "${YELLOW}🔧 Повторное создание виртуального окружения...${NC}"
+    python3 -m venv venv
+fi
+
 source venv/bin/activate
 
 # Устанавливаем зависимости
