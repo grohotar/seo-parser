@@ -282,6 +282,13 @@ class GoogleTrendsParser:
             country_data = self.parse_country_queries(country_name, queries, timeframes)
             all_data[country_name] = country_data
             
+            # Проверяем, есть ли данные
+            has_data = any(period_data for period_data in country_data["queries"].values())
+            if has_data:
+                print(f"    ✓ {country_name} успешно распаршена")
+            else:
+                print(f"    ⚠ {country_name}: нет данных (возможно, заблокировано)")
+            
             # Задержка между странами со случайным значением
             if idx < total_countries:
                 delay = self.get_random_delay()
