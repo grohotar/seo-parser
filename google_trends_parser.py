@@ -2,28 +2,35 @@
 Парсер Google Trends для получения данных о поисковых запросах
 """
 import time
+import random
 from pytrends.request import TrendReq
 import pandas as pd
-from config import GEO, CATEGORY, REQUEST_DELAY, TIMEFRAMES
+from config import GEO, CATEGORY, REQUEST_DELAY, REQUEST_DELAY_MIN, REQUEST_DELAY_MAX, TIMEFRAMES
 
 
 class GoogleTrendsParser:
     """Класс для парсинга данных из Google Trends"""
     
-    def __init__(self, geo="RU", category=CATEGORY, delay=REQUEST_DELAY):
+    def __init__(self, geo="RU", category=CATEGORY, delay_min=REQUEST_DELAY_MIN, delay_max=REQUEST_DELAY_MAX):
         """
         Инициализация парсера
         
         Args:
             geo: Код страны для геолокации (RU - Россия)
             category: Категория поиска (13 - IT/Интернет)
-            delay: Задержка между запросами в секундах
+            delay_min: Минимальная задержка между запросами в секундах
+            delay_max: Максимальная задержка между запросами в секундах
         """
         self.geo = geo
         self.category = category
-        self.delay = delay
+        self.delay_min = delay_min
+        self.delay_max = delay_max
         self.pytrends = TrendReq(hl='ru-RU', tz=180)
         self.request_count = 0
+        
+    def get_random_delay(self):
+        """Возвращает случайную задержку между delay_min и delay_max"""
+        return random.uniform(self.delay_min, self.delay_max)
         
     def get_interest_over_time(self, queries, timeframe):
         """
@@ -47,7 +54,9 @@ class GoogleTrendsParser:
             
             self.request_count += 1
             if self.request_count > 1:
-                time.sleep(self.delay)
+                delay = self.get_random_delay()
+                print(f"    Задержка: {delay:.1f} сек...")
+                time.sleep(delay)
                 
             return data
         except Exception as e:
@@ -76,7 +85,8 @@ class GoogleTrendsParser:
             
             self.request_count += 1
             if self.request_count > 1:
-                time.sleep(self.delay)
+                delay = self.get_random_delay()
+                time.sleep(delay)
                 
             return data
         except Exception as e:
@@ -105,7 +115,8 @@ class GoogleTrendsParser:
             
             self.request_count += 1
             if self.request_count > 1:
-                time.sleep(self.delay)
+                delay = self.get_random_delay()
+                time.sleep(delay)
                 
             return data.get(query, {})
         except Exception as e:
@@ -213,9 +224,11 @@ class GoogleTrendsParser:
             country_data = self.parse_country_queries(country_name, queries, timeframes)
             all_data[country_name] = country_data
             
-            # Небольшая задержка между странами
+            # Задержка между странами со случайным значением
             if idx < total_countries:
-                time.sleep(self.delay)
+                delay = self.get_random_delay()
+                print(f"    Задержка между странами: {delay:.1f} сек...")
+                time.sleep(delay)
         
         print("=" * 60)
         print(f"Парсинг завершен! Всего запросов: {self.request_count}")
