@@ -29,11 +29,13 @@ def print_top_countries(analyzer):
     
     top_3m = analyzer.get_top_countries("3_months", limit=20)
     
-    print(f"{'№':<4} {'Страна':<20} {'Популярность':<15} {'Топ запрос'}")
+    print(f"{'№':<4} {'Страна':<20} {'Кол-во запросов':<15} {'Популярность'}")
     print("-" * 80)
     
     for idx, country in enumerate(top_3m, 1):
-        print(f"{idx:<4} {country['country']:<20} {country['interest']:<15} {country['top_query']}")
+        query_count = analyzer.get_query_count(country["country"])
+        interest = country["interest"]
+        print(f"{idx:<4} {country['country']:<20} {query_count:<15} {interest:.2f}")
 
 
 def print_period_comparison(analyzer):
@@ -56,7 +58,7 @@ def print_period_comparison(analyzer):
         interest_3m = country_3m["interest"]
         interest_1m = top_1m_dict.get(country, 0)
         
-        if interest_3m > 0:
+        if interest_3m > 0 and interest_1m > 0:
             change = ((interest_1m - interest_3m) / interest_3m) * 100
             change_str = f"{change:+.1f}%"
             
@@ -70,11 +72,8 @@ def print_period_comparison(analyzer):
                 trend = "↓↓"
             else:
                 trend = "→"
-        else:
-            change_str = "N/A"
-            trend = "→"
-        
-        print(f"{country:<20} {interest_1m:<15} {interest_3m:<15} {change_str:<15} {trend}")
+            
+            print(f"{country:<20} {interest_1m:<15.2f} {interest_3m:<15.2f} {change_str:<15} {trend}")
 
 
 def print_rising_countries(analyzer):
@@ -122,9 +121,15 @@ def print_country_details(analyzer, country_name, period="3_months"):
     queries = analyzer.get_all_queries_interest(country_name, period)
     
     if queries:
-        print("\nТОП ЗАПРОСОВ:")
-        for i, query in enumerate(queries[:8], 1):
-            print(f"  {i}. {query['query']:30} - {query['interest']}")
+        # Фильтруем только запросы с положительным интересом
+        valid_queries = [q for q in queries if q['interest'] > 0]
+        
+        if valid_queries:
+            print("\nТОП ЗАПРОСОВ:")
+            for i, query in enumerate(valid_queries[:8], 1):
+                print(f"  {i}. {query['query']:30} - {query['interest']:.2f}")
+        else:
+            print("\n❌ Нет валидных запросов (все с нулевым интересом)")
         
         # Связанные запросы
         related = analyzer.get_related_queries(country_name, period, limit=5)
@@ -202,11 +207,20 @@ def main():
     print_separator()
     all_data = parser.parse_all_countries(all_queries, TIMEFRAMES)
     
-    # Анализируем данные
+    # Удаляем страны без данных (None)
+    valid_data = {k: v for k, v in all_data.items() if v is not None}
+    invalid_countries = [k for k, v in all_data.items() if v is None]
+    
+    if invalid_countries:
+        print(f"\n⚠️  Не удалось получить данные для следующих стран:")
+        for country in invalid_countries:
+            print(f"    • {country}")
+    
+    # Анализируем только валидные данные
     print("\nАнализ полученных данных...")
-    analyzer = SEOAnalyzer(all_data)
+    analyzer = SEOAnalyzer(valid_data, all_queries)
     analyzed = analyzer.analyze_all_countries()
-    print(f"✓ Проанализировано {len(analyzed['countries'])} стран")
+    print(f"✓ Проанализировано {len(analyzed['countries'])} стран с валидными данными")
     
     # Выводим результаты
     print_top_countries(analyzer)

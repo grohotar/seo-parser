@@ -225,12 +225,14 @@ class GoogleTrendsParser:
             timeframes: Словарь с периодами {name: value}
             
         Returns:
-            dict: Данные по всем запросам и периодам
+            dict: Данные по всем запросам и периодам или None если ошибка
         """
         country_data = {
             "country": country_name,
             "queries": {}
         }
+        
+        has_valid_data = False
         
         # Получаем данные для каждого периода
         for period_name, period_value in timeframes.items():
@@ -240,22 +242,32 @@ class GoogleTrendsParser:
             averages = self.get_average_interest(queries, period_value, use_retry=True)
             
             if averages:
-                # Находим запрос с максимальным интересом
-                max_query = max(averages.items(), key=lambda x: x[1] if x[1] is not None else 0)
+                # Проверяем что есть хотя бы один запрос с положительным значением
+                valid_values = [v for v in averages.values() if v is not None and v > 0]
                 
-                period_data = {
-                    "averages": averages,
-                    "max_interest": max_query[1] if max_query[1] is not None else 0,
-                    "top_query": max_query[0],
-                    "all_queries": queries
-                }
-                
-                # Получаем связанные запросы для топ запроса
-                related = self.get_related_queries(max_query[0], period_value)
-                if related:
-                    period_data["related_queries"] = related
+                if valid_values:
+                    has_valid_data = True
+                    # Находим запрос с максимальным интересом
+                    max_query = max(averages.items(), key=lambda x: x[1] if x[1] is not None else 0)
+                    
+                    period_data = {
+                        "averages": averages,
+                        "max_interest": max_query[1] if max_query[1] is not None else 0,
+                        "top_query": max_query[0],
+                        "all_queries": queries
+                    }
+                    
+                    # Получаем связанные запросы для топ запроса
+                    related = self.get_related_queries(max_query[0], period_value)
+                    if related:
+                        period_data["related_queries"] = related
             
             country_data["queries"][period_name] = period_data
+        
+        # Если нет валидных данных ни в одном периоде, возвращаем None
+        if not has_valid_data:
+            print(f"    ❌ {country_name}: не удалось получить данные (все запросы с 0)")
+            return None
         
         return country_data
     
