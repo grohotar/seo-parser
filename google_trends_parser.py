@@ -295,8 +295,10 @@ class GoogleTrendsParser:
             all_data[country_name] = country_data
             
             # Проверяем, есть ли данные
-            has_data = any(period_data for period_data in country_data["queries"].values())
-            if has_data:
+            if country_data is None:
+                # Сообщение уже выведено в parse_country_queries
+                pass
+            elif any(period_data for period_data in country_data["queries"].values()):
                 print(f"    ✓ {country_name} успешно распаршена")
             else:
                 print(f"    ⚠ {country_name}: нет данных (возможно, заблокировано)")
