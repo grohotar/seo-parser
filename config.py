@@ -7,16 +7,19 @@ COUNTRIES = {
     "Турция": {
         "name_en": "Turkey",
         "adjective_ru": "турецкий",
+        "adjective_ru_alt": "турецкая",
         "adjective_en": "turkish"
     },
     "Казахстан": {
         "name_en": "Kazakhstan",
         "adjective_ru": "казахский",
+        "adjective_ru_alt": "казахстанский",
         "adjective_en": "kazakh"
     },
     "Германия": {
         "name_en": "Germany",
         "adjective_ru": "немецкий",
+        "adjective_ru_alt": "германская",
         "adjective_en": "german"
     },
     "США": {
@@ -32,26 +35,31 @@ COUNTRIES = {
     "Грузия": {
         "name_en": "Georgia",
         "adjective_ru": "грузинский",
+        "adjective_ru_alt": "грузинская",
         "adjective_en": "georgian"
     },
     "Армения": {
         "name_en": "Armenia",
         "adjective_ru": "армянский",
+        "adjective_ru_alt": "армянская",
         "adjective_en": "armenian"
     },
     "Узбекистан": {
         "name_en": "Uzbekistan",
         "adjective_ru": "узбекский",
+        "adjective_ru_alt": "узбекская",
         "adjective_en": "uzbek"
     },
     "Польша": {
         "name_en": "Poland",
         "adjective_ru": "польский",
+        "adjective_ru_alt": "польская",
         "adjective_en": "polish"
     },
     "Финляндия": {
         "name_en": "Finland",
         "adjective_ru": "финский",
+        "adjective_ru_alt": "финская",
         "adjective_en": "finnish"
     },
     "Нидерланды": {
@@ -101,6 +109,7 @@ COUNTRIES = {
     },
     "Объединенные Арабские Эмираты": {
         "name_en": "UAE",
+        "name_ru_short": "оаэ",
         "adjective_ru": "эмиратский",
         "adjective_en": "emirati"
     },

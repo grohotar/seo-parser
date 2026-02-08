@@ -26,6 +26,14 @@ def generate_query_variations(country_name, country_data):
     variations.append(f"{adjective_ru} впн")
     variations.append(f"впн для {country_name}")
     
+    # Краткая форма (если есть)
+    if "name_ru_short" in country_data:
+        variations.append(f"{country_data['name_ru_short']} впн")
+    
+    # Альтернативные формы прилагательных (если есть)
+    if "adjective_ru_alt" in country_data:
+        variations.append(f"{country_data['adjective_ru_alt']} впн")
+    
     # Английские запросы
     variations.append(f"vpn {name_en}")
     variations.append(f"{name_en} vpn")
@@ -62,6 +70,14 @@ if __name__ == "__main__":
     
     print("Пример запросов для Турции:")
     for query in all_queries["Турция"]:
+        print(f"  - {query}")
+    
+    print(f"\nПример запросов для Армении:")
+    for query in all_queries["Армения"]:
+        print(f"  - {query}")
+    
+    print(f"\nПример запросов для Казахстана:")
+    for query in all_queries["Казахстан"]:
         print(f"  - {query}")
     
     print(f"\nВсего стран: {len(all_queries)}")
