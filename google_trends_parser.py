@@ -7,6 +7,16 @@ from pytrends.request import TrendReq
 import pandas as pd
 from config import GEO, CATEGORY, REQUEST_DELAY, REQUEST_DELAY_MIN, REQUEST_DELAY_MAX, TIMEFRAMES
 
+# Список user-agent заголовков для ротации
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/120.0.0.0',
+]
+
 
 class GoogleTrendsParser:
     """Класс для парсинга данных из Google Trends"""
@@ -25,12 +35,53 @@ class GoogleTrendsParser:
         self.category = category
         self.delay_min = delay_min
         self.delay_max = delay_max
-        self.pytrends = TrendReq(hl='ru-RU', tz=180)
         self.request_count = 0
+        self.current_user_agent = random.choice(USER_AGENTS)
+        self.reinit_pytrends()
         
     def get_random_delay(self):
         """Возвращает случайную задержку между delay_min и delay_max"""
         return random.uniform(self.delay_min, self.delay_max)
+    
+    def reinit_pytrends(self):
+        """Переинициализация pytrends с новым user-agent"""
+        self.pytrends = TrendReq(hl='ru-RU', tz=180, requests_args={'headers': {'User-Agent': self.current_user_agent}})
+    
+    def retry_with_backoff(self, func, max_retries=3, initial_delay=30):
+        """
+        Выполняет функцию с экспоненциальной задержкой при ошибках
+        
+        Args:
+            func: Функция для выполнения
+            max_retries: Максимальное количество повторов
+            initial_delay: Начальная задержка в секундах
+            
+        Returns:
+            Результат функции или None при неудаче
+        """
+        for attempt in range(max_retries):
+            try:
+                result = func()
+                if result is not None:
+                    return result
+            except Exception as e:
+                print(f"    Попытка {attempt + 1}/{max_retries} не удалась: {e}")
+                
+                if attempt < max_retries - 1:
+                    # Экспоненциальная задержка с jitter
+                    delay = initial_delay * (2 ** attempt) + random.uniform(0, 10)
+                    print(f"    Ждем {delay:.1f} сек перед повторной попыткой...")
+                    
+                    # Меняем user-agent при каждой повторной попытке
+                    self.current_user_agent = random.choice(USER_AGENTS)
+                    self.reinit_pytrends()
+                    print(f"    Новый User-Agent: {self.current_user_agent[:50]}...")
+                    
+                    time.sleep(delay)
+                else:
+                    print(f"    Все {max_retries} попыток исчерпаны")
+                    
+        return None
         
     def get_interest_over_time(self, queries, timeframe):
         """
@@ -123,39 +174,46 @@ class GoogleTrendsParser:
             print(f"Ошибка при получении связанных запросов для {query}: {e}")
             return {}
     
-    def get_average_interest(self, queries, timeframe):
+    def get_average_interest(self, queries, timeframe, use_retry=True):
         """
         Получает средний интерес к запросам за период
         
         Args:
             queries: Список запросов
             timeframe: Период времени
+            use_retry: Использовать ли механизм ретраев
             
         Returns:
             dict: {query: average_interest} или None если ошибка
         """
-        try:
-            data = self.get_interest_over_time(queries[:5], timeframe)
-            
-            if data is None or data.empty:
+        def _get_data():
+            try:
+                data = self.get_interest_over_time(queries[:5], timeframe)
+                
+                if data is None or data.empty:
+                    return None
+                
+                # Удаляем столбец isPartial если есть
+                if 'isPartial' in data.columns:
+                    data = data.drop(columns=['isPartial'])
+                
+                # Вычисляем среднее значение для каждого запроса
+                averages = {}
+                for query in queries[:5]:
+                    if query in data.columns:
+                        averages[query] = data[query].mean()
+                    else:
+                        averages[query] = 0
+                        
+                return averages
+            except Exception as e:
+                print(f"Ошибка при вычислении среднего интереса: {e}")
                 return None
-            
-            # Удаляем столбец isPartial если есть
-            if 'isPartial' in data.columns:
-                data = data.drop(columns=['isPartial'])
-            
-            # Вычисляем среднее значение для каждого запроса
-            averages = {}
-            for query in queries[:5]:
-                if query in data.columns:
-                    averages[query] = data[query].mean()
-                else:
-                    averages[query] = 0
-                    
-            return averages
-        except Exception as e:
-            print(f"Ошибка при вычислении среднего интереса: {e}")
-            return None
+        
+        if use_retry:
+            return self.retry_with_backoff(_get_data)
+        else:
+            return _get_data()
     
     def parse_country_queries(self, country_name, queries, timeframes):
         """
@@ -178,8 +236,8 @@ class GoogleTrendsParser:
         for period_name, period_value in timeframes.items():
             period_data = {}
             
-            # Получаем средний интерес для всех запросов
-            averages = self.get_average_interest(queries, period_value)
+            # Получаем средний интерес для всех запросов (с ретраями)
+            averages = self.get_average_interest(queries, period_value, use_retry=True)
             
             if averages:
                 # Находим запрос с максимальным интересом
